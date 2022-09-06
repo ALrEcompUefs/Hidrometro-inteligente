@@ -1,4 +1,5 @@
 #include "Hidrometro.h"
+using namespace std;
 
 Hidrometro::Hidrometro(int id,string cpf,string cep,float vazao){
 	this->id =id;
@@ -7,10 +8,11 @@ Hidrometro::Hidrometro(int id,string cpf,string cep,float vazao){
 	this->vazao =vazao;
 	this->bloqueado =true;
 	this->consumo = 0; 
+	this->vazamento =0;
 }
 
-void Hidrometro::exibeMenssagem(){
-	cout << "id:"<<id <<"\ncliente:"<<cpf_cliente << "\ncep:" << cep << "\n vazao" << vazao;
+void Hidrometro::exibeMensagem(){
+	cout << "id:"<<id <<"\ncliente:"<<cpf_cliente << "\ncep:" << cep << "\n vazao" << vazao<<"\n";
 } 
 
 void Hidrometro::setId(int id){
@@ -55,4 +57,9 @@ float Hidrometro::getVazao(){
 
 bool Hidrometro::estaBloqueado(){
 	return this->bloqueado;
+}
+
+void Hidrometro::executarHidrometro(){
+	exibeMensagem();
+	this->consumo += vazao;
 }
