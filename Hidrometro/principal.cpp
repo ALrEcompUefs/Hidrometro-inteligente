@@ -5,8 +5,10 @@
 #include <cstring>
 using namespace std;
 
+// Variaveis globais
 char *IP_SERV;
 bool COMUNICACAO_HABILITADA = false;
+int TEMPO_EXECUCAO = 10;
 /*
 |	Como uma Thread é utilizada para simular o consumo pelo o hidrometro,
 |	o hidrometro é instanciado como variavel global a fim de facilitar
@@ -67,6 +69,7 @@ void* interface(void* arg){
 		while(true){
 			printf("--Interface do Hidrometro--\n");
 			printf("[1] Alterar vazao\n[2] Alterar Vazamento\n[3] Habilitar Comunicacao\n[4] Desabilitar Comunicacao \n[5] Exibir dados\n");
+			printf ("[6] Exibir consumo\n[7] Alterar tempo de execucao\n");
 			printf("Escolha Opcao:");
 			scanf("%c",&opt);
 			getchar();
@@ -100,12 +103,18 @@ void* interface(void* arg){
 					getchar();
 					break;
 				case '6':
+					printf("\nConsumo Total:%.3f \n",hidro1.getConsumo());
+					getchar();
 					break;
+				case '7':
+					printf("\nTempo de execucao atual:%d",TEMPO_EXECUCAO);
+					printf("\nInforme o tempo:");
+					scanf("%d",&TEMPO_EXECUCAO);
+					getchar();
 				default:
 					system("clear");
 					cout<<"\n DIGITE APENAS numeros de 0-9!!!\n";
 					break;
-				
 			}
 			system("clear");
 		}
@@ -204,7 +213,7 @@ int configurarServidor(int port){
 void* executarHidrometro(void* arg){
 		while(true){
 			hidro1.executarHidrometro();
-			sleep(10);
+			sleep(TEMPO_EXECUCAO);
 		}
 		pthread_exit(NULL);
 }
