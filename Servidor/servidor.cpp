@@ -253,7 +253,7 @@ int bloquearHidrometro(int id){
 	char buffer[MAX];
 
 		if( hidrometros.find(id) == hidrometros.end() ){
-			printf("Hidrometro nao cadastrado\n");
+			//printf("Hidrometro nao cadastrado\n");
 			return -1; // não existe o hidrometro cadastrado no sistema
 		}
 			
