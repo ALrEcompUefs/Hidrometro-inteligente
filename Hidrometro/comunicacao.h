@@ -17,6 +17,7 @@ void enviarMensagem(char *msg);
 // Métodos para configurar Servidor TCP e recebimento de dados
 int configurarServidor(int port);
 
+// Métodos para execução de threads
 void* executarHidrometro(void* arg);
 void* executarServidor(void *arg);
 void* comunicacao(void* arg);

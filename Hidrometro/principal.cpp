@@ -12,7 +12,7 @@ bool COMUNICACAO_HABILITADA = false;
 |	o hidrometro é instanciado como variavel global a fim de facilitar
 |	as operações na thread
 */
-	Hidrometro hidro1(0,"00000000","440100010",1.0);	
+	Hidrometro hidro1(0,"0000000","44010010",1.0);	
 
 //Variavéis globais para o cliente UDP
     int sock_udp;
@@ -66,7 +66,7 @@ void* interface(void* arg){
 
 		while(true){
 			printf("--Interface do Hidrometro--\n");
-			printf("[1] Alterar vazao\n[2] Alterar Vazamento\n[3] Habilitar Comunicacao\n[4] Exibir dados\n[5] Desabilitar Comunicacao\n");
+			printf("[1] Alterar vazao\n[2] Alterar Vazamento\n[3] Habilitar Comunicacao\n[4] Desabilitar Comunicacao \n[5] Exibir dados\n");
 			printf("Escolha Opcao:");
 			scanf("%c",&opt);
 			getchar();
@@ -89,21 +89,25 @@ void* interface(void* arg){
 					printf("Comunicacao habilitada\n");
 					getchar();
 					break;
-				case '4':	// exibir dados
+				case '4':	// habilitar comunicacao
+					COMUNICACAO_HABILITADA = false;
+					printf("Comunicacao desabilitada\n");
+					getchar();
+					break;
+				case '5':	// exibir dados
 					printf("\nDados do Hidrometro\n");
 					hidro1.exibeMensagem();
 					getchar();
 					break;
-				case '5':	// habilitar comunicacao
-					COMUNICACAO_HABILITADA = false;
-					printf("Comunicacao desabilitada\n");
-					getchar();
+				case '6':
+					break;
 				default:
 					system("clear");
 					cout<<"\n DIGITE APENAS numeros de 0-9!!!\n";
 					break;
-				system("clear");
+				
 			}
+			system("clear");
 		}
 }
 int configurarCliente(int port){
