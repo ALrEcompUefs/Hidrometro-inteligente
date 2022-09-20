@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <map>
+#include <queue>
 #include <pthread.h>
 #include "servidor.h"
 
@@ -24,17 +25,21 @@ using namespace std;
 /*
 |	Outras variaveis globais
 */
-map<int,historico_consumo> hidrometros;
+	map<int,historico_consumo> hidrometros;	 // Guarda os hidrometros cadastrados
+	queue<pair<int,int>> fila;	//Fila para requisições de comunicação com hidrometros
+
 // para compilar g++ servidor.cpp -o servidor -l pthread
+// para executar ./servidor
 int main(int argc, char const* argv[]){
-	pthread_t t1,t2;
+	pthread_t t1,t2,t3;
 		
 		pthread_create(&t1,NULL,&executarServidor,NULL);
 		pthread_create(&t2,NULL,&comunicacao,NULL);
-
+		pthread_create(&t3,NULL,&interface,NULL);
 
 		pthread_join(t1, NULL);
 		pthread_join(t2, NULL);
+		pthread_join(t3,NULL);
 	return 0;
 }
 
@@ -63,11 +68,54 @@ int configurarServidor(int port){
 	return 1;
 }
 
+void *interface(void *arg){
+	char opt;
+	int valor;
+		while (true){
+			printf("--- Servidor ---\n");
+			printf("[1] Listar Hidrometros\n[2] Visualizar Consumo \n[3] Bloquear Hidrometro\n[4] Desbloquear Hidrometro\n");
+			printf("Escolha:");
+			scanf("%c",&opt);
+			getchar();
+			switch (opt){
+				case '1':
+					system("clear");
+					listarHidrometros();
+					break;
+				case '2':
+					printf("Informe o id:");
+					cin>>valor;
+					getchar();
+					visualizarConsumo(valor);
+					break;
+				case '3':
+					printf("Informe o id:");
+					cin>>valor;
+					getchar();
+					fila.push(make_pair(valor,1)); //cria par de solicitação
+					break;
+				case '4':
+					printf("Informe o id:");
+					cin>>valor;
+					getchar();
+					fila.push(make_pair(valor,2)); //cria par de solicitação
+					break;
+				default:
+					printf("INFORME APENAS DIGITOS DE 0-9!!\n");
+					break;
+			}
+			getchar();	// aguarda entrada do teclado para continuar
+			system("clear");
+		}
+		
+	pthread_exit(NULL);
+}
+
 void *executarServidor(void *arg){
 	int len, n;
 	char buffer[MAX];
 
-		configurarServidor(8080);
+		configurarServidor(MY_PORT);
 		len = sizeof(cliente_udp_addr);
 		while(true){
 			n = recvfrom(sock_udp, (char *)buffer, MAX,MSG_WAITALL, ( struct sockaddr *) &cliente_udp_addr, (socklen_t*) &len);
@@ -80,12 +128,23 @@ void *executarServidor(void *arg){
 
 void *comunicacao(void *arg){
 	char buffer[MAX];
-	char *msg = "bloquear hidrometo";
+	pair<int,int> requisicao;
 		
 		while(true){
-			//configurarCliente(4785);
-			//enviarMensagem(msg,buffer);
-			sleep(30);
+			if(!fila.empty()){
+				requisicao = fila.front();	//pega o primeiro elemento
+				fila.pop(); 	// remove o primeiro elemento
+				// agora envia mensagem de bloqueio ou desbloqueio para o hidrometro
+
+				// se a operação for do tipo é um solicitação de bloqueio
+				if(requisicao.second == 1){
+					bloquearHidrometro(requisicao.first);
+				}
+				else{	// se for do tipo 2 é uma solicitação de desbloqueio
+					desbloquearHidrometro(requisicao.first);
+				}
+			}
+			sleep(5);
 		}
 	pthread_exit(NULL);
 }
@@ -116,22 +175,21 @@ int configurarCliente(int port, string ip){
 }
 
 int enviarMensagem(char *msg,char *buffer){
-	// conecta o socket do cliente ao servidor
-	if ((pt_cliente = connect(socket_cliente, (struct sockaddr*)&end_servidor, sizeof(end_servidor))) < 0) {
-		printf("Falha na conexão com servidor TCP\n");
-		return -1;
-	}
+		// conecta o socket do cliente ao servidor
+		if ((pt_cliente = connect(socket_cliente, (struct sockaddr*)&end_servidor, sizeof(end_servidor))) < 0) {
+			printf("Falha na conexão com servidor TCP\n");
+			return -1;
+		}
 
-    /*
-    |   Envia mensagem ao Servidor e espera a resposta
-    */
-	send(socket_cliente, msg, strlen(msg), 0);
-	printf("Bloqueio do Hidrometro solicitado\n");
-	valread = read(socket_cliente, buffer, 1024);
-	printf("%s\n", buffer);
+		/*
+		|   Envia mensagem ao Servidor e espera a resposta
+		*/
+		send(socket_cliente, msg, strlen(msg), 0);
+		printf("Bloqueio do Hidrometro solicitado\n");
+		valread = read(socket_cliente, buffer, 1024);
 
-	//Fecha conexão com o servidor
-	close(pt_cliente);
+		//Fecha conexão com o servidor
+		close(pt_cliente);
 
 	return 1;
 } 
@@ -149,8 +207,8 @@ void atualizarConsumo(char* dados){
 			hidrometros[data.id].consumo = data.consumo;
 		}
 		hidro = hidrometros[data.id];
-		printf("Id:%d Cliente:%s Consumo:%.2f Ip:%s Porta:%d\n",hidro.id,hidro.cliente.c_str()
-				,hidro.consumo,hidro.ip.c_str() , hidro.porta);
+		//printf("Id:%d Cliente:%s Consumo:%.2f Ip:%s Porta:%d\n",hidro.id,hidro.cliente.c_str()
+		//		,hidro.consumo,hidro.ip.c_str() , hidro.porta);
 }
 
 
@@ -194,8 +252,11 @@ int bloquearHidrometro(int id){
 	char *msg ="bloquear";
 	char buffer[MAX];
 
-		if( hidrometros.find(id) == hidrometros.end() )
+		if( hidrometros.find(id) == hidrometros.end() ){
+			printf("Hidrometro nao cadastrado\n");
 			return -1; // não existe o hidrometro cadastrado no sistema
+		}
+			
 		else{	
 			hidro= hidrometros[id];
 			/* 
@@ -204,8 +265,7 @@ int bloquearHidrometro(int id){
 			configurarCliente(hidro.porta,hidro.ip);
 			// envia a mensagem
 			enviarMensagem(msg,buffer);
-			if( strcmp(buffer,"bloqueado") != 0)	// se não recebeu confirmação de bloqueio
-				return 1;	
+			printf("Hidrometro bloqueado\n");	
 		}
 	return 0;	// mensagem enviada com sucesso e hidrometro bloqueado
 }
@@ -215,8 +275,10 @@ int desbloquearHidrometro(int id){
 	char *msg ="desbloquear";
 	char buffer[MAX];
 
-		if( hidrometros.find(id) == hidrometros.end() )
+		if( hidrometros.find(id) == hidrometros.end() ){
+			printf("Hidrometro nao cadastrado\n");
 			return -1; // não existe o hidrometro cadastrado no sistema
+		}	
 		else{	
 			hidro= hidrometros[id];
 			/* 
@@ -225,8 +287,31 @@ int desbloquearHidrometro(int id){
 			configurarCliente(hidro.porta,hidro.ip);
 			// envia a mensagem
 			enviarMensagem(msg,buffer);
-			if( strcmp(buffer,"desbloqueado") != 0)	// se não recebeu confirmação de desbloqueio
-				return 1;	
+			printf("Hidrometro desbloqueado\n");	
 		}
 	return 0;	// mensagem enviada com sucesso e hidrometro bloqueado
+}
+
+/*
+|	Método que busca um hidrometro pelo id e exibe seu consumo se existir
+*/
+void visualizarConsumo(int id){
+
+	if( hidrometros.find(id) == hidrometros.end()){
+		printf("Hidrometro nao cadastrado\n");
+	}
+	else{
+		printf("Cliente ");
+		cout<< hidrometros[id].cliente<<"\n";
+		printf("Consumo:%.3f\n",hidrometros[id].consumo);
+	}
+}
+/*
+|	Método que exibe os hidrometros salvos no servidor
+*/
+void listarHidrometros(){
+	for (map<int,historico_consumo>::iterator it= hidrometros.begin(); it!= hidrometros.end(); it++){
+		cout<<"Hidrometro:"<<it->second.id<<"	Cliente:"<<it->second.cliente<<"\n";
+	}
+	
 }

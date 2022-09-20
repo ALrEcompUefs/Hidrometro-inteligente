@@ -245,7 +245,7 @@ void* comunicacao(void* arg){
 
 void* executarServidor(void *arg){
 	char buffer[MAX];
-	char *msg = "Hidrometo bloqueado!!";
+	char *msg;
 
 	configurarServidor( hidro1.getPorta());
 	while(1){
@@ -256,15 +256,20 @@ void* executarServidor(void *arg){
 			}
 			// Com a conexão feita agora realiza a leitura da mensagem enviada pelo cliente
 			leitura = read(novo_socket, buffer, 1024);	// lê a mensagem e armazena no buffer
-			printf("%s\n", buffer);	// exibe mensagem recebida
-			
-			// Bloqueia o Hidrometro
-			hidro1.bloquearHidrometo();
-			// Aqui vai ter de bloquear o hidrometro e confirmar depois
+			//printf("%s\n", buffer);	// exibe mensagem recebida
 
+			
+			if( strcmp(buffer,"bloquear") == 0){
+				// Bloqueia o Hidrometro
+				hidro1.bloquearHidrometo();
+				msg= "bloqueado";
+			}
+			if( strcmp(buffer,"desbloquear") == 0){
+				hidro1.bloquearHidrometo();
+				msg = "desbloqueado";
+			}
 			bzero(buffer, sizeof(buffer)); // zera espaço de mémoria para struct do endereço
 			send(novo_socket, msg, strlen(msg), 0);	// responde solicitação do cliente
-			
 			// Fecha conexão com o socket
 			close(novo_socket);
 		}
