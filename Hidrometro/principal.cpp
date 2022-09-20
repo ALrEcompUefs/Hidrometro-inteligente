@@ -105,8 +105,9 @@ void* interface(void* arg){
 					system("clear");
 					cout<<"\n DIGITE APENAS numeros de 0-9!!!\n";
 					break;
-				system("clear");
+				
 			}
+			system("clear");
 		}
 }
 int configurarCliente(int port){
