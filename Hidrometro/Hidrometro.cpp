@@ -15,7 +15,7 @@ Hidrometro::Hidrometro(int id,string cpf,string cep,float vazao){
 void Hidrometro::exibeMensagem(){
 	cout <<"id:"<<id <<"\ncliente:"
 		 <<cpf_cliente << "\nCEP:" << cep << "\nvazao:" 
-		 << vazao<<"\nIp:"<<ip<<"\n";
+		 << vazao<<"\nIp:"<<ip<<"\n"<<"Bloqueado:"<<bloqueado<<"\n";
 } 
 
 void Hidrometro::setId(int id){
