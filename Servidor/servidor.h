@@ -10,6 +10,7 @@
 
 #define MY_PORT 7979
 #define MAX 1024 
+//docker build -t n19alisson/hidrometro ./
 
 using namespace std;
 

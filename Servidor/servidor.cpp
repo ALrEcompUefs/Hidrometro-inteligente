@@ -165,7 +165,7 @@ int configurarCliente(int port, string ip){
 	end_servidor.sin_family = AF_INET;      // Insere na struct
 	end_servidor.sin_port = htons(port);    // traduz o inteiro sem sinal para  "network byte order" e insere na struct
 
-	  // tradução do endereço IPV4 e IPV6 para string
+	// tradução do endereço IPV4 e IPV6 para string
 	if (inet_pton(AF_INET, "127.0.0.1", &end_servidor.sin_addr) <= 0) {
 		printf("Endereço invalido  Para o servidor TCP\n");
 		return -1;
