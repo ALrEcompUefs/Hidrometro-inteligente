@@ -11,7 +11,8 @@
 #define MY_PORT 7979
 #define MAX 1024 
 //docker build -t n19alisson/hidrometro ./
-
+typedef int ID;
+typedef int TIPO_REQUISICAO;
 using namespace std;
 
 typedef struct historico_consumo{
@@ -27,8 +28,8 @@ typedef struct historico_consumo{
 
 // Métodos de configuração da comunicação
 int configurarServidor(int port);   // configura servidor UDP
-int configurarCliente(int port, string ip);    // cria cliente TCP 
-int enviarMensagem(char *msg,char* buffer);      // envioa mensagem para servidor TCP
+int configurarCliente(int port, string ip,char *msg,char *buffer);    // cria cliente TCP 
+int enviarMensagem(char *msg,int tipo,int id);      // envioa mensagem para servidor TCP
 
 // Métodos para execução da thread
 void *executarServidor(void *arg);

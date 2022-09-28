@@ -26,20 +26,21 @@ using namespace std;
 |	Outras variaveis globais
 */
 	map<int,historico_consumo> hidrometros;	 // Guarda os hidrometros cadastrados
-	queue<pair<int,int>> fila;	//Fila para requisições de comunicação com hidrometros
+	queue<pair<ID,TIPO_REQUISICAO>> fila;	//Fila para requisições de comunicação com hidrometros
 
 // para compilar g++ servidor.cpp -o servidor -l pthread
 // para executar ./servidor
 int main(int argc, char const* argv[]){
 	pthread_t t1,t2,t3;
-		
+
+		pthread_create(&t3,NULL,&interface,NULL);
 		pthread_create(&t1,NULL,&executarServidor,NULL);
 		pthread_create(&t2,NULL,&comunicacao,NULL);
-		pthread_create(&t3,NULL,&interface,NULL);
-
+		
+		pthread_join(t3,NULL);
 		pthread_join(t1, NULL);
 		pthread_join(t2, NULL);
-		pthread_join(t3,NULL);
+		
 	return 0;
 }
 
@@ -48,7 +49,7 @@ int configurarServidor(int port){
 	sock_udp = socket(AF_INET, SOCK_DGRAM, 0);
 	if ( sock_udp < 0 ) {
 		printf("Erro na criacao do socket servidor");
-		return -1;
+	return -1;
 	}
 		
 	bzero(&serv_udp_addr, sizeof(serv_udp_addr));
@@ -89,8 +90,9 @@ void *interface(void *arg){
 					visualizarConsumo(valor);
 					break;
 				case '3':
+					system("clear");
 					printf("Informe o id:");
-					cin>>valor;
+					scanf("%d",&valor);
 					getchar();
 					fila.push(make_pair(valor,1)); //cria par de solicitação
 					break;
@@ -102,6 +104,7 @@ void *interface(void *arg){
 					break;
 				default:
 					printf("INFORME APENAS DIGITOS DE 0-9!!\n");
+					getchar();
 					break;
 			}
 			getchar();	// aguarda entrada do teclado para continuar
@@ -126,9 +129,15 @@ void *executarServidor(void *arg){
 	pthread_exit(NULL);
 }
 
+/**
+ *	Método para execução da thread de comunicação 
+ * 	Na comunicação o servidor abre um socket cliente que envia uma menssagem para um hidrometro
+ * 	Dois tipos de mensagem são enviadas, de bloqueio ou de desbloqueio
+ *	Existe uma fila com as requisições para um hidrometro que contém o tipo e id do hidrometro
+ */
 void *comunicacao(void *arg){
 	char buffer[MAX];
-	pair<int,int> requisicao;
+	pair<ID,TIPO_REQUISICAO> requisicao;// para de uma requisição
 		
 		while(true){
 			if(!fila.empty()){
@@ -138,17 +147,17 @@ void *comunicacao(void *arg){
 
 				// se a operação for do tipo é um solicitação de bloqueio
 				if(requisicao.second == 1){
-					bloquearHidrometro(requisicao.first);
+					enviarMensagem("bloquear",1,requisicao.first);
 				}
 				else{	// se for do tipo 2 é uma solicitação de desbloqueio
-					desbloquearHidrometro(requisicao.first);
+					enviarMensagem("desbloquear",2,requisicao.first);
 				}
 			}
-			sleep(5);
+			sleep(1);
 		}
 	pthread_exit(NULL);
 }
-int configurarCliente(int port, string ip){
+int configurarCliente(int port, string ip,char *msg,char *buffer){
 	 /*
     |   Cria o socket e retorna o descritor do arquivo
 	|	AF_INET processos conectados por ipv6 ou Ipv4
@@ -163,6 +172,7 @@ int configurarCliente(int port, string ip){
 
     // Insere os endereços na struct 
 	end_servidor.sin_family = AF_INET;      // Insere na struct
+	end_servidor.sin_addr.s_addr = inet_addr(ip.c_str());
 	end_servidor.sin_port = htons(port);    // traduz o inteiro sem sinal para  "network byte order" e insere na struct
 
 	// tradução do endereço IPV4 e IPV6 para string
@@ -170,30 +180,27 @@ int configurarCliente(int port, string ip){
 		printf("Endereço invalido  Para o servidor TCP\n");
 		return -1;
 	}
-
-	return 1;
-}
-
-int enviarMensagem(char *msg,char *buffer){
-		// conecta o socket do cliente ao servidor
+	// conecta o socket do cliente ao servidor
 		if ((pt_cliente = connect(socket_cliente, (struct sockaddr*)&end_servidor, sizeof(end_servidor))) < 0) {
 			printf("Falha na conexão com servidor TCP\n");
 			return -1;
 		}
-
-		/*
-		|   Envia mensagem ao Servidor e espera a resposta
-		*/
+		
+		//Envia mensagem ao Servidor e espera a resposta		
 		send(socket_cliente, msg, strlen(msg), 0);
-		printf("Bloqueio do Hidrometro solicitado\n");
+		//printf("Bloqueio do Hidrometro solicitado\n");
 		valread = read(socket_cliente, buffer, 1024);
 
 		//Fecha conexão com o servidor
 		close(pt_cliente);
 
 	return 1;
-} 
+}
 
+/*
+*	Atualiza o consumo de um historico de Hidrometro
+*   recebe como parametro a mensagem do hidrometro
+*/
 void atualizarConsumo(char* dados){
 	historico_consumo data,hidro;
 
@@ -211,7 +218,9 @@ void atualizarConsumo(char* dados){
 		//		,hidro.consumo,hidro.ip.c_str() , hidro.porta);
 }
 
-
+/**
+ * 	Separa os dados de uma string e insere na struct passada como argumento
+ */
 void inserirDados(historico_consumo *data, char* msg){
 	string str;
 	int p1,p2;
@@ -247,50 +256,6 @@ void inserirDados(historico_consumo *data, char* msg){
 		data->porta = stoi(str.substr(p1+1,p2-p1-1));
 }
 
-int bloquearHidrometro(int id){
-	historico_consumo hidro;
-	char *msg ="bloquear";
-	char buffer[MAX];
-
-		if( hidrometros.find(id) == hidrometros.end() ){
-			//printf("Hidrometro nao cadastrado\n");
-			return -1; // não existe o hidrometro cadastrado no sistema
-		}
-			
-		else{	
-			hidro= hidrometros[id];
-			/* 
-			|	configura o cliente para enviar mensagem ao hidrometro para a porta e Ip especificados
-			*/
-			configurarCliente(hidro.porta,hidro.ip);
-			// envia a mensagem
-			enviarMensagem(msg,buffer);
-			printf("Hidrometro bloqueado\n");	
-		}
-	return 0;	// mensagem enviada com sucesso e hidrometro bloqueado
-}
-
-int desbloquearHidrometro(int id){
-	historico_consumo hidro;
-	char *msg ="desbloquear";
-	char buffer[MAX];
-
-		if( hidrometros.find(id) == hidrometros.end() ){
-			printf("Hidrometro nao cadastrado\n");
-			return -1; // não existe o hidrometro cadastrado no sistema
-		}	
-		else{	
-			hidro= hidrometros[id];
-			/* 
-			|	configura o cliente para enviar mensagem ao hidrometro para a porta e Ip especificados
-			*/
-			configurarCliente(hidro.porta,hidro.ip);
-			// envia a mensagem
-			enviarMensagem(msg,buffer);
-			printf("Hidrometro desbloqueado\n");	
-		}
-	return 0;	// mensagem enviada com sucesso e hidrometro bloqueado
-}
 
 /*
 |	Método que busca um hidrometro pelo id e exibe seu consumo se existir
@@ -313,5 +278,23 @@ void listarHidrometros(){
 	for (map<int,historico_consumo>::iterator it= hidrometros.begin(); it!= hidrometros.end(); it++){
 		cout<<"Hidrometro:"<<it->second.id<<"	Cliente:"<<it->second.cliente<<"\n";
 	}
-	
+}
+
+int enviarMensagem(char *msg,int tipo,int id){
+		historico_consumo hidro;
+		char buffer[MAX];
+		if( hidrometros.find(id) == hidrometros.end() ){
+			//printf("Hidrometro nao cadastrado\n");
+			return -1; // não existe o hidrometro cadastrado no sistema
+		}	
+		else{	
+			hidro= hidrometros[id];  // obtém hidrometro com o id solicitado
+			/*
+			*	configura o cliente para enviar mensagem ao hidrometro para a porta e Ip especificados
+			*	E Envia a mensagem para o hidrometro
+			*/
+			configurarCliente(hidro.porta,hidro.ip,msg,buffer);
+			
+		}
+	return 1;
 }
