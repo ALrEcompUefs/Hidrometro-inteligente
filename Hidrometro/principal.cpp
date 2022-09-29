@@ -6,7 +6,7 @@
 using namespace std;
 
 // Variaveis globais
-char *IP_SERV;
+char *IP_SERV;	// ip do servidor
 bool COMUNICACAO_HABILITADA = false;
 int TEMPO_EXECUCAO = 10;
 /*
@@ -51,7 +51,7 @@ int main(int argc , char *argv[]){
 		pthread_create(&t1,NULL,&executarHidrometro,NULL);	// Atualziação do consumo
 		pthread_create(&t2,NULL,&comunicacao,NULL);			// Envio dos dados UDP
 		pthread_create(&t3,NULL,&executarServidor,NULL);	// Recebe as requisições TCP
-		pthread_create(&t4,NULL,&interface,NULL);
+		pthread_create(&t4,NULL,&interface,NULL);			// Interface
 		
 		pthread_join(t1, NULL);
 		pthread_join(t2, NULL);
@@ -63,7 +63,7 @@ int main(int argc , char *argv[]){
 }
 
 void* interface(void* arg){
-	char opt;
+	char opt;		// opção do Menu
 	double aux;
 
 		while(true){
@@ -214,12 +214,16 @@ int configurarServidor(int port){
 */
 void* executarHidrometro(void* arg){
 		while(true){
-			hidro1.executarHidrometro();
-			sleep(TEMPO_EXECUCAO);
+			hidro1.executarHidrometro();	// atualiza o consumo
+			sleep(TEMPO_EXECUCAO);			// dorme pelo tempo definido
 		}
 		pthread_exit(NULL);
 }
 
+/*
+|	Procedimento que chama o método para envio de dados para o servidor
+|	se o hidrometro está bloqueado ou a comunicação desativada , não realiza o envio
+*/
 void* comunicacao(void* arg){
 	char buffer[MAX];
 	string txt;
@@ -244,6 +248,10 @@ void* comunicacao(void* arg){
 	pthread_exit(NULL);
 }
 
+/*
+|	Executa o servidor TCP
+|	Fica esperando receber mensagens do cliente tcp
+*/
 void* executarServidor(void *arg){
 	char buffer[MAX];
 	char *msg;

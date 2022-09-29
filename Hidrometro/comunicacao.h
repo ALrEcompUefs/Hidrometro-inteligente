@@ -8,8 +8,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-#define PORTA_SERV 79799 
-#define MAX 1024
+#define PORTA_SERV 79799    // porta do servidor 
+#define MAX 1024            // tamanho máximo do buffer
 // Métodos para configurar cliente UDP e envio de dados
 int configurarCliente(int port);
 void enviarMensagem(char *msg);
