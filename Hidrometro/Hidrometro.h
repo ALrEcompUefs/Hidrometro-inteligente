@@ -18,7 +18,7 @@ class Hidrometro
 		string cep; 		// cep da localidade
 		float consumo;		// consumo total do hidrometro
 		float vazao; 		// vazao por segundo do hidrometro
-		float vazamento;	// vazamento de água presente
+		float vazao_real;	// vazamento de água presente
 		bool bloqueado;		// estado do hidrometro
 		string ip; 
 		int porta;
@@ -42,7 +42,7 @@ class Hidrometro
 		void setVazao(float vazao); 
 		/// @brief Altera o vazamento no hidrometro
 		/// @param vazamento valor do vazamento
-		void setVazamento(float vazamento); 
+		void setvazao_real(float vazao_real); 
 		/// @brief Bloqueia o hidrometro impedindo o fluxo de água
 		void bloquearHidrometo();
 		/// @brief Desbloqueia o hidrometro liberando o fluxo de água
@@ -56,7 +56,7 @@ class Hidrometro
 		string getCep();
 		float getConsumo();
 		float getVazao();
-		float getVazamento();
+		float getvazao_real();
 		bool estaBloqueado();
 		/// @brief Método para executar a thread que simula o funcionamento do hidrometro
 		void executarHidrometro();

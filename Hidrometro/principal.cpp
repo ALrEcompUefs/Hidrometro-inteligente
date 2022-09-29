@@ -85,7 +85,7 @@ void* interface(void* arg){
 					printf("Informe o vazamento:");
 					cin>>aux;
 					getchar();
-					hidro1.setVazamento(aux);
+					hidro1.setvazao_real(aux);
 					break;
 				case '3':	// habilitar comunicacao
 					COMUNICACAO_HABILITADA = true;
@@ -111,6 +111,8 @@ void* interface(void* arg){
 					printf("\nInforme o tempo:");
 					scanf("%d",&TEMPO_EXECUCAO);
 					getchar();
+				case '8':
+					hidro1.desbloquearHidrometo();
 				default:
 					system("clear");
 					cout<<"\n DIGITE APENAS numeros de 0-9!!!\n";
@@ -235,7 +237,6 @@ void* comunicacao(void* arg){
 				// envia mensagem
 				configurarCliente(PORTA_SERV);	
 				enviarMensagem(msg);
-			
 			}
 			sleep(10);
 		}

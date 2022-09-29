@@ -9,7 +9,7 @@ Hidrometro::Hidrometro(int id,string cpf,string cep,float vazao){
 	this->vazao =vazao;
 	this->bloqueado =false;
 	this->consumo = 0; 
-	this->vazamento =0;
+	this->vazao_real =0;
 }
 
 void Hidrometro::exibeMensagem(){
@@ -32,8 +32,8 @@ void Hidrometro::setCep(string cep){
 void Hidrometro::setVazao(float vazao){
 	this->vazao=vazao;
 }
-void Hidrometro::setVazamento(float vazamento){
-	 this->vazamento = vazamento;
+void Hidrometro::setvazao_real(float vazao_real){
+	 this->vazao_real = vazao_real;
 }
 void Hidrometro::bloquearHidrometo(){
 	this->bloqueado= true;
@@ -81,7 +81,7 @@ int Hidrometro::getPorta(){
 }
 
 void Hidrometro::executarHidrometro(){
-	float consumo_real = vazao - vazamento;
+	float consumo_real = vazao - vazao_real;
 		
 		if( consumo_real < 0)
 			consumo_real = 0;
