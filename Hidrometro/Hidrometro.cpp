@@ -2,6 +2,9 @@
 #include <string>
 using namespace std;
 
+/*
+*	Instância o hidrometro
+*/
 Hidrometro::Hidrometro(int id,string cpf,string cep,float vazao){
 	this->id =id;
 	this->cpf_cliente=cpf;
@@ -11,37 +14,62 @@ Hidrometro::Hidrometro(int id,string cpf,string cep,float vazao){
 	this->consumo = 0; 
 	this->vazao_real =0;
 }
-
+/**
+ * Exibe mensagem com os dados selecionados do hidrometro
+*/
 void Hidrometro::exibeMensagem(){
 	cout <<"id:"<<id <<"\ncliente:"
 		 <<cpf_cliente << "\nCEP:" << cep << "\nvazao:" 
 		 << vazao<<"\nIp:"<<ip<<"\n"<<"Bloqueado:"<<bloqueado<<"\n";
 } 
 
+/*
+*	Aletera o ID do hidrometro
+*/
 void Hidrometro::setId(int id){
 	this->id=id;
 }
-
+/*
+*	Altera o CPF do cliente a quem o hidrometro esta vinculado
+*/
 void Hidrometro::setCPF(string cpf){
 	this->cpf_cliente= cpf;
 }
-
+/*
+*	Altera o CEP do hidrometro
+*/
 void Hidrometro::setCep(string cep){
 	this->cep=cep;
 }
+/*
+*	Altera a vazao do hidrometo
+*/
 void Hidrometro::setVazao(float vazao){
 	this->vazao=vazao;
 }
+/*
+*	Altera a vazao real do hidrometro
+*/
 void Hidrometro::setvazao_real(float vazao_real){
 	 this->vazao_real = vazao_real;
 }
+
+/*
+*	Bloqueia o hidrometro impedindo de executar
+*/
 void Hidrometro::bloquearHidrometo(){
 	this->bloqueado= true;
 }
+/*
+*	Desbloqueia o hidrometo permitindo sua execução
+*/
 void Hidrometro::desbloquearHidrometo(){
 	this->bloqueado= false;
 }
 
+/*
+*	Métodos para obter  dados do hidrometro
+*/
 int Hidrometro::getId(){
 	return this->id;
 }
@@ -69,17 +97,31 @@ string Hidrometro::getIp(){
 	return this->ip;
 }
 
+/*
+*	Obtém  o ip do hidrometro e atualiza
+*/
 void Hidrometro::setIp(){
 	this->ip = getHostIp();
 }
+/*
+*	Altera a porta em que o hidrometro esta operando
+*/
 void Hidrometro::setPorta(int porta){
 	this->porta = porta;
 }
 
+/*
+*	Obtém a porta em o hidrometro esta operando
+*/
 int Hidrometro::getPorta(){
 	return this->porta;
 }
 
+/*
+*	Método que executa o hidrometro
+*	subtrai a vazão definida pela vazão real e atualiza o consumo do hidrometro
+*	se o hidrometro está bloqueado o consumo não é contabilizado
+*/
 void Hidrometro::executarHidrometro(){
 	float consumo_real = vazao - vazao_real;
 		
@@ -90,6 +132,9 @@ void Hidrometro::executarHidrometro(){
 			this->consumo += consumo_real*10;
 }
 
+/*
+*	forma uma string com os dados do hidrometro
+*/
 string Hidrometro::getMensagem(){
 	string msg;
 	return "-"+ to_string(id)
@@ -101,6 +146,9 @@ string Hidrometro::getMensagem(){
 			+to_string(this->porta) +"-";
 }
 
+/*
+*	Obtém o ip do hidrometro 
+*/
 string Hidrometro::getHostIp(){
 	int fd; // ponteiro descritor de arquivo
     struct ifreq ifr;
