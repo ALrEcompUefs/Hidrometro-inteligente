@@ -269,6 +269,7 @@ void inserirDados(historico_consumo *data, char* msg){
 */
 void visualizarConsumo(int id){
 
+	// Se não existir o hidrometro cadastrado
 	if( hidrometros.find(id) == hidrometros.end()){
 		printf("Hidrometro nao cadastrado\n");
 	}
@@ -321,5 +322,4 @@ void gerarBoleto(int id){
 		printf("Consumo:%.2f	Total:%.2f\n",hidro.consumo,(hidro.consumo*0.25)+15.75);
 		printf("Codigo de pagamento:000.025.%s.%d.47852",hidro.cep.c_str(),hidro.id);
 	}
-
 }
