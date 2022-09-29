@@ -31,9 +31,9 @@ int main(int argc, char const* argv[]){
 		pthread_create(&t2,NULL,&executarServidor,NULL);
 		pthread_create(&t3,NULL,&comunicacao,NULL);
 		
-		pthread_join(t1, NULL);
+		pthread_join(t1,NULL);
 		pthread_join(t2, NULL);
-		pthread_join(t3,NULL);
+		pthread_join(t3, NULL);
 		
 	return 0;
 }
@@ -70,7 +70,6 @@ void *interface(void *arg){
 			system("clear");
 			printf("--- Servidor ---\n");
 			printf("[1] Listar Hidrometros\n[2] Visualizar Consumo \n[3] Bloquear Hidrometro\n[4] Desbloquear Hidrometro\n");
-			printf("[5] Gerar Boleto\n");
 			printf("Escolha:");
 			scanf("%c",&opt);
 			getchar();
@@ -100,14 +99,6 @@ void *interface(void *arg){
 					getchar();
 					fila.push(make_pair(valor,2)); //cria par de solicitação
 					break;
-				case '5':
-					system("clear");
-					printf("Gerar boleto do cliente\n");
-					printf("Informe o id do hidrometro:");
-					cin>>valor;
-					getchar();
-					gerarBoleto(valor);
-					break;
 				default:
 					system("clear");
 					printf("INFORME APENAS DIGITOS DE 0-9!!\n");
@@ -121,12 +112,12 @@ void *interface(void *arg){
 void *executarServidor(void *arg){
 	int len, n;
 	char buffer[MAX];
-		configurarServidor();
+		configurarServidor(MY_PORT);
 		len = sizeof(cliente_udp_addr);
 		while(true){
 			n = recvfrom(sock_udp, (char *)buffer, MAX,MSG_WAITALL, ( struct sockaddr *) &cliente_udp_addr, (socklen_t*) &len);
 			buffer[n] = '\0';
-			printf("Client : %s\n", buffer);
+			//printf("Client : %s\n", buffer);
 			atualizarConsumo(buffer);
 		}
 	pthread_exit(NULL);
@@ -169,40 +160,40 @@ int configurarCliente(int port, string ip,char *msg){
     int valread;    //valor lido
 	struct sockaddr_in end_servidor;    //struct para manipular enderecos usados no protocolo
 	char buffer[MAX];
-	 /*
-    |   Cria o socket e retorna o descritor do arquivo
-	|	AF_INET processos conectados por ipv6 ou Ipv4
-	|   AF_LOCAL processos posix no mesmo host
-	|   SOCK_STREAM define comunicação orientada para conexão 
-	|   SOCK_DGRAM define comunicação não orientada a conexão
-    */
-	if ((socket_cliente = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		//printf("Falha na criação do socket Cliente\n");
-		return -1;
-	}
+        /*
+        |   Cria o socket e retorna o descritor do arquivo
+        |	AF_INET processos conectados por ipv6 ou Ipv4
+        |   AF_LOCAL processos posix no mesmo host
+        |   SOCK_STREAM define comunicação orientada para conexão 
+        |   SOCK_DGRAM define comunicação não orientada a conexão
+        */
+        if ((socket_cliente = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+            //printf("Falha na criação do socket Cliente\n");
+            return -1;
+        }
 
-    // Insere os endereços na struct 
-	end_servidor.sin_family = AF_INET;      // Insere na struct
-	end_servidor.sin_port = htons(port);    // traduz o inteiro sem sinal para  "network byte order" e insere na struct
-	end_servidor.sin_addr.s_addr = inet_addr(ip.c_str());
+        // Insere os endereços na struct 
+        end_servidor.sin_family = AF_INET;      // Insere na struct
+        end_servidor.sin_port = htons(port);    // traduz o inteiro sem sinal para  "network byte order" e insere na struct
+        end_servidor.sin_addr.s_addr = inet_addr(ip.c_str());
 
-	// tradução do endereço IPV4 e IPV6 para string
-	if (inet_pton(AF_INET, "127.0.0.1", &end_servidor.sin_addr) <= 0) {
-		//printf("Endereço invalido  Para o servidor TCP\n");
-		return -1;
-	}
-	// conecta o socket do cliente ao servidor
-		if ((pt_cliente = connect(socket_cliente, (struct sockaddr*)&end_servidor, sizeof(end_servidor))) < 0) {
-			//printf("Falha na conexão com servidor TCP\n");
-			return -1;
-		}
-		
-		//Envia mensagem ao Servidor e espera a resposta		
-		send(socket_cliente, msg, strlen(msg), 0);
-		//printf("Bloqueio do Hidrometro solicitado\n");
-		valread = read(socket_cliente, buffer, MAX);
-		//Fecha conexão com o servidor
-		close(pt_cliente);
+        // tradução do endereço IPV4 e IPV6 para string
+        if (inet_pton(AF_INET, "127.0.0.1", &end_servidor.sin_addr) <= 0) {
+            //printf("Endereço invalido  Para o servidor TCP\n");
+            return -1;
+        }
+        // conecta o socket do cliente ao servidor
+            if ((pt_cliente = connect(socket_cliente, (struct sockaddr*)&end_servidor, sizeof(end_servidor))) < 0) {
+                //printf("Falha na conexão com servidor TCP\n");
+                return -1;
+            }
+            
+            //Envia mensagem ao Servidor e espera a resposta		
+            //send(socket_cliente, msg, strlen(msg), 0);
+            //printf("Bloqueio do Hidrometro solicitado\n");
+            //valread = read(socket_cliente, buffer, MAX);
+            //Fecha conexão com o servidor
+            close(pt_cliente);
 
 	return 1;
 }
@@ -289,37 +280,16 @@ void listarHidrometros(){
 
 void enviarMensagem(int tipo,int id){
 	historico_consumo hidro;
-	char *msg = new char [MAX];
 		if( hidrometros.find(id) == hidrometros.end() ){
 			//printf("Hidrometro nao cadastrado\n")
-		}
-		else{
-			hidro= hidrometros[id];  // obtém hidrometro com o id solicitado
-			/*
-			*	configura o cliente para enviar mensagem ao hidrometro para a porta e Ip especificados
-			*	E Envia a mensagem para o hidrometro
-			*/
-			if(tipo == 1)
-				strcpy(msg,"bloquear");
-			else
-				strcpy(msg,"desbloquear");
-			// envia a mensagem
-			configurarCliente(hidro.porta,hidro.ip,msg);
-		}
-		
-}
-
-void gerarBoleto(int id){
-	historico_consumo hidro;
-	if( hidrometros.find(id) == hidrometros.end()){
-		printf("Hidrometro nao cadastrado\n");
-	}
-	else{
-		hidro = hidrometros[id]; // seleciona o hidrometro
-		cout<<"Pague sua Fatura\n";
-		cout<<"Cliente:"<<hidro.cliente<<"\n";
-		printf("Consumo:%.2f	Total:%.2f\n",hidro.consumo,(hidro.consumo*0.25)+15.75);
-		printf("Codigo de pagamento:000.025.%s.%d.47852",hidro.cep.c_str(),hidro.id);
-	}
-
+		}		
+		hidro= hidrometros[id];  // obtém hidrometro com o id solicitado
+		/*
+		*	configura o cliente para enviar mensagem ao hidrometro para a porta e Ip especificados
+		*	E Envia a mensagem para o hidrometro
+		*/
+	if(tipo == 1)
+		configurarCliente(hidro.porta,hidro.ip,"bloquear");
+	else
+		configurarCliente(hidro.porta,hidro.ip,"desbloquear");
 }
