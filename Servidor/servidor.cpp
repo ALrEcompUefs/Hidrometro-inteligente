@@ -39,7 +39,7 @@ int main(int argc, char const* argv[]){
 }
 
 int configurarServidor(){
-	// Creating socket file descriptor
+	// Cria socket do servidor
 	sock_udp = socket(AF_INET, SOCK_DGRAM, 0);
 	if ( sock_udp < 0 ) {
 		printf("Erro na criacao do socket servidor");
@@ -49,12 +49,12 @@ int configurarServidor(){
 	bzero(&serv_udp_addr, sizeof(serv_udp_addr));
 	bzero(&cliente_udp_addr, sizeof(cliente_udp_addr));
 		
-	// Filling server information
+	// insere informações do endereço
 	serv_udp_addr.sin_family = AF_INET; // IPv4
 	serv_udp_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_udp_addr.sin_port = htons(MY_PORT);
 		
-	// Bind the socket with the server address
+	// Vincula socket do servidor
 	if ( bind(sock_udp, (const struct sockaddr *)&serv_udp_addr,sizeof(serv_udp_addr)) < 0 ){
 		printf("Erro de vinculacao\n");
 		return -1;
